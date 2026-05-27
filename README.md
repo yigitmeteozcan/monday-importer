@@ -3,16 +3,13 @@
 > Import companies and analyst notes from Excel into Monday.com.  
 > Monday's native import doesn't support comments — **this does.**
 
-![Node](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen)
-![License](https://img.shields.io/badge/license-MIT-blue)
-![Security](https://img.shields.io/badge/security-hardened-success)
-![Tests](https://img.shields.io/badge/tests-21%20passing-brightgreen)
+
 
 ---
 
 ## Why this exists
 
-Monday.com's built-in CSV/Excel import creates items — but silently drops your notes column. There's no way to bulk-import items **and** attach analyst comments in one step.
+Monday.com's built-in CSV/Excel import creates items — but you can't import updates/comments. There's no way to bulk-import items **and** attach VC analyst comments in one step.
 
 This CLI reads a two-column Excel file and for every row:
 1. Creates a Monday item (company name)
