@@ -1,6 +1,6 @@
 # monday-importer
 
-> Import companies and analyst notes from Excel into Monday.com.  
+> Import companies and notes from Excel into Monday.com.  
 > Monday's native import doesn't support comments — **this does.**
 
 
