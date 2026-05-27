@@ -3,7 +3,7 @@ import { createInterface } from 'readline';
 import { appendFileSync } from 'fs';
 import { readExcel } from './excel.js';
 import { createItem, createUpdate, RateLimitError } from './monday.js';
-import { log, warn, validateEnv, defuseFormula } from './utils.js';
+import { log, warn, validateEnv, defuseFormula, stripHtml } from './utils.js';
 
 const SLEEP_BETWEEN_REQUESTS_MS = 300;
 const RATE_LIMIT_WAIT_MS = 60_000;
@@ -32,12 +32,18 @@ function logToFile(message) {
   }
 }
 
-async function importRow(token, boardId, company, note) {
-  const itemId = await createItem(token, boardId, company);
+async function importRow(token, boardId, company, note, onItemCreated) {
+  const cleanCompany = stripHtml(company);
+  const cleanNote = stripHtml(note);
+
+  const itemId = await createItem(token, boardId, cleanCompany);
+  // Log item ID immediately — before attempting createUpdate.
+  // If createUpdate fails, the log proves the item already exists and won't be duplicated on retry.
+  onItemCreated(itemId);
   await sleep(SLEEP_BETWEEN_REQUESTS_MS);
 
-  if (note) {
-    await createUpdate(token, itemId, note);
+  if (cleanNote) {
+    await createUpdate(token, itemId, cleanNote);
     await sleep(SLEEP_BETWEEN_REQUESTS_MS);
   }
 
@@ -97,9 +103,11 @@ async function main() {
     const position = `[${i + 1}/${total}]`;
 
     try {
-      const itemId = await importRow(token, boardId, company, note);
+      const itemId = await importRow(token, boardId, company, note, id => {
+        logToFile(`${position} ${defuseFormula(company)} | item_id=${id} | item created`);
+      });
       log(`${position} ${company} ✓  (item ID: ${itemId})`);
-      logToFile(`${position} ${defuseFormula(company)} | item_id=${itemId}`);
+      logToFile(`${position} ${defuseFormula(company)} | item_id=${itemId} | comment posted`);
       successCount++;
       consecutiveFailures = 0;
     } catch (err) {
@@ -108,9 +116,11 @@ async function main() {
         await sleep(RATE_LIMIT_WAIT_MS);
 
         try {
-          const itemId = await importRow(token, boardId, company, note);
+          const itemId = await importRow(token, boardId, company, note, id => {
+            logToFile(`${position} ${defuseFormula(company)} | item_id=${id} | item created [retry]`);
+          });
           log(`${position} ${company} ✓  (item ID: ${itemId}) [retry]`);
-          logToFile(`${position} ${defuseFormula(company)} | item_id=${itemId} [retry]`);
+          logToFile(`${position} ${defuseFormula(company)} | item_id=${itemId} | comment posted [retry]`);
           successCount++;
           consecutiveFailures = 0;
           continue;

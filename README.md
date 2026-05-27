@@ -69,7 +69,7 @@ npm run import
 ## Terminal preview
 
 ```
-[monday-importer] About to import 10 companies to Monday board 18146507025.
+[monday-importer] About to import 10 companies to Monday board 1234567890.
 Preview:
    1. Haast Autonomous — "Strong team, drone logistics focus. Series A ready..."
    2. Forevolta — "Battery tech, interesting IP portfolio..."
@@ -122,7 +122,7 @@ Copy `.env.example` to `.env` and fill in both values:
 
 ```bash
 MONDAY_API_TOKEN=your_monday_api_token
-MONDAY_BOARD_ID=18146507025
+MONDAY_BOARD_ID=1234567890
 ```
 
 ### Getting your API token
@@ -137,7 +137,7 @@ MONDAY_BOARD_ID=18146507025
 Open your board in Monday. The URL looks like:
 
 ```
-https://monday.com/boards/18146507025
+https://monday.com/boards/1234567890
                            ^^^^^^^^^^^
                            This is your board ID
 ```
@@ -192,6 +192,10 @@ This tool was hardened for use with sensitive VC deal flow data:
 - **Exact dependency pins** — no `^` or `~` ranges; supply chain compromises can't silently upgrade deps
 - **No `node-fetch`** — uses Node 20+ native fetch; one fewer third-party dependency
 - **Token masking** — `maskToken()` applied in all fetch error paths
+- **Early item ID logging** — item ID written to `import-log.txt` immediately after creation, before the comment step. If a comment fails, the log shows the item already exists so you won't duplicate it on retry.
+
+> **Use a dedicated Monday API token with limited permissions for this tool, not your personal admin token.**
+> Create a separate Monday user (or API token scoped to this workspace) with access only to the specific boards this tool needs. If the token is ever compromised, blast radius is limited to those boards — not your entire workspace including LP data, portfolio tracking, and fund management boards.
 
 ---
 
@@ -265,6 +269,20 @@ If you use nvm, the included `.nvmrc` pins the version automatically:
 ```bash
 nvm use
 ```
+
+---
+
+## Known issues
+
+### uuid vulnerability in exceljs (moderate)
+
+`npm audit` reports 2 moderate-severity findings in `uuid < 11.1.1` (GHSA-w5hq-g745-h8pq), a transitive dependency pulled in by `exceljs >= 3.5.0`.
+
+**Why it's not fixed here:** The only available fix is `npm audit fix --force`, which downgrades `exceljs` to `3.4.0` — a breaking API change that removes features this tool depends on.
+
+**Risk in this context:** The vulnerable `uuid` code path is in v3/v5/v6 UUID generation with a caller-supplied buffer. This tool never calls `uuid` directly; it is used internally by exceljs for worksheet cell tracking. Exploitation requires an attacker to control the buffer argument at the call site, which is not possible through normal Excel file parsing.
+
+**Mitigation:** Watch for an `exceljs` release that updates its `uuid` dependency to >= 11.1.1. When it ships, update the pinned version in `package.json` and re-run `npm install`.
 
 ---
 
