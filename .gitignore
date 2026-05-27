@@ -1,6 +1,5 @@
 .env
 import.xlsx
 *.xlsx
-import-log.txt
-*.log
+logs/
 node_modules/

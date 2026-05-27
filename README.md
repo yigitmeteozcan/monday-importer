@@ -192,7 +192,8 @@ This tool was hardened for use with sensitive VC deal flow data:
 - **Exact dependency pins** — no `^` or `~` ranges; supply chain compromises can't silently upgrade deps
 - **No `node-fetch`** — uses Node 20+ native fetch; one fewer third-party dependency
 - **Token masking** — `maskToken()` applied in all fetch error paths
-- **Early item ID logging** — item ID written to `import-log.txt` immediately after creation, before the comment step. If a comment fails, the log shows the item already exists so you won't duplicate it on retry.
+- **Early item ID logging** — item ID written to `logs/import-log.txt` immediately after creation, before the comment step. If a comment fails, the log proves the item exists and won't be duplicated on retry.
+- **Dedup on resume** — on each run the log is read first; any company already present with a logged item ID is skipped automatically.
 
 > **Use a dedicated Monday API token with limited permissions for this tool, not your personal admin token.**
 > Create a separate Monday user (or API token scoped to this workspace) with access only to the specific boards this tool needs. If the token is ever compromised, blast radius is limited to those boards — not your entire workspace including LP data, portfolio tracking, and fund management boards.
@@ -211,9 +212,11 @@ monday-importer/
 │   ├── safety.test.js   ← 11 tests: destructive op blocking
 │   └── security.test.js ← 10 tests: injection, pollution, token leak
 ├── .env.example      ← Credential template
+├── .npmrc            ← Enforces Node >= 20 at install time
 ├── .env              ← Your credentials (git-ignored)
 ├── import.xlsx       ← Your data file (git-ignored)
-└── import-log.txt    ← Created item IDs (git-ignored)
+└── logs/
+    └── import-log.txt  ← Created item IDs, used for dedup (git-ignored)
 ```
 
 ---

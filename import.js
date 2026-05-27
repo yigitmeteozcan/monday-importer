@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { createInterface } from 'readline';
-import { appendFileSync } from 'fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'fs';
 import { readExcel } from './excel.js';
 import { createItem, createUpdate, RateLimitError } from './monday.js';
 import { log, warn, validateEnv, defuseFormula, stripHtml } from './utils.js';
@@ -8,6 +8,7 @@ import { log, warn, validateEnv, defuseFormula, stripHtml } from './utils.js';
 const SLEEP_BETWEEN_REQUESTS_MS = 300;
 const RATE_LIMIT_WAIT_MS = 60_000;
 const MAX_CONSECUTIVE_FAILURES = 3;
+const LOG_PATH = 'logs/import-log.txt';
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -25,11 +26,30 @@ function prompt(question) {
 
 function logToFile(message) {
   try {
-    appendFileSync('import-log.txt', message + '\n');
+    mkdirSync('logs', { recursive: true });
+    appendFileSync(LOG_PATH, message + '\n');
   } catch (err) {
     // non-fatal: log file write failure should not stop the import
-    warn(`Could not write to import-log.txt: ${err.message}`);
+    warn(`Could not write to ${LOG_PATH}: ${err.message}`);
   }
+}
+
+// Returns a Set of company names already present in the log from prior runs.
+// Log lines look like: "[3/10] Acme Corp | item_id=123456 | item created"
+function loadImportedCompanies() {
+  if (!existsSync(LOG_PATH)) return new Set();
+  const lines = readFileSync(LOG_PATH, 'utf8').split('\n');
+  const seen = new Set();
+  for (const line of lines) {
+    const match = line.match(/^\[\d+\/\d+\] (.+?) \| item_id=\d+/);
+    if (match) {
+      let name = match[1];
+      // Strip defuseFormula's leading quote if present
+      if (name.startsWith("'")) name = name.slice(1);
+      seen.add(name);
+    }
+  }
+  return seen;
 }
 
 async function importRow(token, boardId, company, note, onItemCreated) {
@@ -92,15 +112,27 @@ async function main() {
   log('');
 
   // 4. Import rows
+  const importedCompanies = loadImportedCompanies();
+  if (importedCompanies.size > 0) {
+    log(`Found ${importedCompanies.size} previously imported ${importedCompanies.size === 1 ? 'company' : 'companies'} in log — duplicates will be skipped.`);
+  }
+
   const timestamp = new Date().toISOString();
   logToFile(`\n=== Import run: ${timestamp} | Board: ${boardId} | Rows: ${total} ===`);
 
   let successCount = 0;
+  let skippedCount = 0;
   let consecutiveFailures = 0;
 
   for (let i = 0; i < rows.length; i++) {
     const { company, note } = rows[i];
     const position = `[${i + 1}/${total}]`;
+
+    if (importedCompanies.has(company)) {
+      log(`${position} ${company} — already imported, skipping`);
+      skippedCount++;
+      continue;
+    }
 
     try {
       const itemId = await importRow(token, boardId, company, note, id => {
@@ -149,10 +181,13 @@ async function main() {
   }
 
   log(`\nDone. ${successCount}/${total} items imported successfully.`);
-  if (successCount < total) {
-    log(`${total - successCount} row(s) failed — check warnings above.`);
+  if (skippedCount > 0) {
+    log(`${skippedCount} row(s) skipped — already imported in a previous run.`);
   }
-  log('Item IDs saved to import-log.txt\n');
+  if (successCount + skippedCount < total) {
+    log(`${total - successCount - skippedCount} row(s) failed — check warnings above.`);
+  }
+  log(`Item IDs saved to ${LOG_PATH}\n`);
 }
 
 main();
