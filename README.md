@@ -218,40 +218,6 @@ monday-importer/
 
 ---
 
-## Running tests
-
-```bash
-node --test tests/safety.test.js tests/security.test.js
-```
-
-```
-✓ delete mutation throws SAFETY ERROR
-✓ archive mutation throws SAFETY ERROR
-✓ change_column_value mutation throws SAFETY ERROR
-✓ clear_item mutation throws SAFETY ERROR
-✓ update_item mutation throws SAFETY ERROR
-✓ duplicate_item mutation throws SAFETY ERROR
-✓ delete_update mutation throws SAFETY ERROR
-✓ archive_board mutation throws SAFETY ERROR
-✓ move_item_to_board mutation throws SAFETY ERROR
-✓ create_item is allowed
-✓ create_update is allowed
-✓ 401 error message does not contain the token string
-✓ validateEnv throws on placeholder token
-✓ delete mutation is blocked by assertSafe
-✓ empty company name row is skipped
-✓ stripHtml removes script tags
-✓ company name longer than 255 chars is truncated
-✓ readExcel caps output at MAX_ROWS (500)
-✓ RateLimitError has correct name and is instanceof Error
-✓ MAX_CONSECUTIVE_FAILURES constant is 3
-✓ corrupted xlsx file throws a clean error message
-
-21 passing
-```
-
----
-
 ## Requirements
 
 - **Node.js >= 20.0.0** (uses native fetch — not available below v18; v20 recommended for security patches)
