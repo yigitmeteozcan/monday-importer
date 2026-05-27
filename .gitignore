@@ -1,0 +1,4 @@
+.env
+import.xlsx
+import-log.txt
+node_modules/

@@ -1,0 +1,16 @@
+{
+  "name": "monday-importer",
+  "version": "1.0.0",
+  "description": "Import companies and analyst notes from Excel into Monday.com",
+  "main": "import.js",
+  "type": "module",
+  "scripts": {
+    "start": "node import.js",
+    "import": "node import.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.0.0",
+    "exceljs": "^4.4.0",
+    "node-fetch": "^3.3.0"
+  }
+}
