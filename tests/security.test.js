@@ -3,11 +3,15 @@ import assert from 'node:assert/strict';
 import { writeFileSync, mkdtempSync, rmSync } from 'fs';
 import { tmpdir } from 'os';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import ExcelJS from 'exceljs';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+import { readFileSync, symlinkSync, mkdtempSync as fsMkdtempSync, rmSync as fsRmSync } from 'fs';
 import { assertSafe, RateLimitError } from '../monday.js';
-import { stripHtml, validateEnv, MAX_ROWS, MAX_ITEM_NAME_LENGTH } from '../utils.js';
-import { readExcel } from '../excel.js';
+import { stripHtml, validateEnv, MAX_ROWS, MAX_ITEM_NAME_LENGTH, defuseFormula } from '../utils.js';
+import { readExcel, MAX_FILE_SIZE_BYTES } from '../excel.js';
 
 // ---------------------------------------------------------------------------
 // Scenario 1 — API token never logged in 401 error message

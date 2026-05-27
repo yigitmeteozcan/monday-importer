@@ -45,4 +45,13 @@ function validateEnv() {
   return { token, boardId };
 }
 
-export { MAX_ROWS, MAX_ITEM_NAME_LENGTH, stripHtml, log, warn, validateEnv };
+/**
+ * defuseFormula — prefixes formula-injection strings with a single quote.
+ * Prevents CSV/Excel formula injection when company names are written to log files.
+ * Example: '=HYPERLINK("evil.com")' → "'=HYPERLINK(\"evil.com\")"
+ */
+function defuseFormula(str) {
+  return /^[=+\-@]/.test(str) ? `'${str}` : str;
+}
+
+export { MAX_ROWS, MAX_ITEM_NAME_LENGTH, stripHtml, log, warn, validateEnv, defuseFormula };

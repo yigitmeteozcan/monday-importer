@@ -3,7 +3,7 @@ import { createInterface } from 'readline';
 import { appendFileSync } from 'fs';
 import { readExcel } from './excel.js';
 import { createItem, createUpdate, RateLimitError } from './monday.js';
-import { log, warn, validateEnv } from './utils.js';
+import { log, warn, validateEnv, defuseFormula } from './utils.js';
 
 const SLEEP_BETWEEN_REQUESTS_MS = 300;
 const RATE_LIMIT_WAIT_MS = 60_000;
@@ -99,7 +99,7 @@ async function main() {
     try {
       const itemId = await importRow(token, boardId, company, note);
       log(`${position} ${company} ✓  (item ID: ${itemId})`);
-      logToFile(`${position} ${company} | item_id=${itemId}`);
+      logToFile(`${position} ${defuseFormula(company)} | item_id=${itemId}`);
       successCount++;
       consecutiveFailures = 0;
     } catch (err) {
@@ -110,7 +110,7 @@ async function main() {
         try {
           const itemId = await importRow(token, boardId, company, note);
           log(`${position} ${company} ✓  (item ID: ${itemId}) [retry]`);
-          logToFile(`${position} ${company} | item_id=${itemId} [retry]`);
+          logToFile(`${position} ${defuseFormula(company)} | item_id=${itemId} [retry]`);
           successCount++;
           consecutiveFailures = 0;
           continue;

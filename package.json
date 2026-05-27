@@ -4,14 +4,17 @@
   "description": "Import companies and analyst notes from Excel into Monday.com",
   "main": "import.js",
   "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "start": "node import.js",
     "import": "node import.js",
-    "test": "node tests/safety.test.js"
+    "test": "node tests/safety.test.js",
+    "audit": "npm audit --audit-level=moderate"
   },
   "dependencies": {
-    "dotenv": "^16.0.0",
-    "exceljs": "^4.4.0",
-    "node-fetch": "^3.3.0"
+    "dotenv": "16.6.1",
+    "exceljs": "4.4.0"
   }
 }

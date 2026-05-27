@@ -1,16 +1,30 @@
 import ExcelJS from 'exceljs';
-import { existsSync } from 'fs';
+import { existsSync, lstatSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { MAX_ROWS, MAX_ITEM_NAME_LENGTH, warn } from './utils.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+export const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50MB
+
+const DANGEROUS_KEYS = ['__proto__', 'constructor', 'prototype'];
+
 export async function readExcel(filename = 'import.xlsx') {
   const filePath = path.resolve(__dirname, filename);
 
   if (!existsSync(filePath)) {
     throw new Error(`import.xlsx not found. Place your Excel file at: ${filePath}`);
+  }
+
+  const stats = lstatSync(filePath);
+  if (stats.isSymbolicLink()) {
+    throw new Error('import.xlsx must be a regular file, not a symlink.');
+  }
+  if (stats.size > MAX_FILE_SIZE_BYTES) {
+    throw new Error(
+      `import.xlsx is too large (${(stats.size / 1024 / 1024).toFixed(1)}MB). Maximum is 50MB.`
+    );
   }
 
   const workbook = new ExcelJS.Workbook();
@@ -52,6 +66,11 @@ export async function readExcel(filename = 'import.xlsx') {
 
     if (!company) {
       warn(`Row ${rowNumber}: empty company name — skipped`);
+      continue;
+    }
+
+    if (DANGEROUS_KEYS.includes(company)) {
+      warn(`Row ${rowNumber}: company name '${company}' is a dangerous key — skipped`);
       continue;
     }
 
